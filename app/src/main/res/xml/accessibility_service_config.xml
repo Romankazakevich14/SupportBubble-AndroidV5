@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Foreground-app detection config for AppMonitorService.
+
+  accessibilityEventTypes
+    typeWindowStateChanged   — fires when a new window/activity comes to front
+                               (primary signal for an app switch).
+    typeWindowsChanged       — fires when the set of windows changes; catches
+                               cases where typeWindowStateChanged is suppressed
+                               (split-screen, some launchers, PIP transitions).
+    typeWindowContentChanged — high-frequency; used only as a fallback to recover
+                               the active package when the two above are missed.
+
+  canRetrieveWindowContent="true" + flagRetrieveInteractiveWindows let the service
+  read getWindows()/getRootInActiveWindow() so it can resolve the genuinely-active
+  package, not just the package that fired a transient event. This is what fixes
+  currentApp failing to update when switching between Telegram/Instagram/etc.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeWindowContentChanged"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="100"
+    android:canRetrieveWindowContent="true" />

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-only overrides.
+
+    Re-enables cleartext (HTTP) traffic for debug builds only, so the app can be
+    pointed at a plain-HTTP backend during local development (e.g. http://10.0.2.2
+    from the emulator). Release builds inherit usesCleartextTraffic="false" from
+    the main manifest and only ever talk to the HTTPS backend.
+
+    tools:replace tells the manifest merger to override (not conflict with) the
+    value declared in src/main/AndroidManifest.xml.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:usesCleartextTraffic="true"
+        tools:replace="android:usesCleartextTraffic" />
+
+</manifest>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Support Bubble</string>
+
+    <!-- Accessibility service -->
+    <string name="accessibility_service_label">Support Bubble App Monitor</string>
+    <string name="accessibility_service_description">
+        Monitors which app is currently in use and reports it to the Support Bubble backend,
+        so support agents can see device activity in real time.
+    </string>
+</resources>

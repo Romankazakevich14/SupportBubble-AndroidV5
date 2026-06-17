@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground layer: white chat bubble centred within the 72dp safe zone
+  of the 108dp canvas (scale 2.0, translated to centre).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="2.0"
+        android:scaleY="2.0"
+        android:translateX="30"
+        android:translateY="30">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M20,2H4C2.9,2 2,2.9 2,4v18l4,-4h14c1.1,0 2,-0.9 2,-2V4C22,2.9 21.1,2 20,2z M20,16H5.17L4,17.17V4h16v12z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M8,11m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M12,11m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M16,11m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0" />
+    </group>
+</vector>

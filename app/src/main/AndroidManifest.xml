@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ── Network ──────────────────────────────────────────────────────────── -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ── Foreground service ─────────────────────────────────────────────────
+         FOREGROUND_SERVICE          — required since Android 9 (API 28)
+         FOREGROUND_SERVICE_DATA_SYNC — required since Android 14 (API 34) for
+                                         services performing network I/O
+         POST_NOTIFICATIONS          — required since Android 13 (API 33) for
+                                         the persistent service notification AND
+                                         FCM push notifications
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- ── Boot receiver ──────────────────────────────────────────────────────
+         Allows BootReceiver to receive ACTION_BOOT_COMPLETED so the foreground
+         service is restarted automatically after a device reboot.
+         Normal protection level — granted at install time, no runtime prompt.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- ── Overlay window ─────────────────────────────────────────────────────
+         SYSTEM_ALERT_WINDOW lets the app draw over other applications.
+         Android shows this to the user as "Display over other apps".
+         User must grant it manually in:
+           Settings → Apps → Support Bubble → Display over other apps → Allow
+    -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- BIND_ACCESSIBILITY_SERVICE is a signature-level permission: only the
+         Android system can grant it. Declaring here is optional but correct. -->
+    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- ── Package visibility (Android 11 / API 30+) ──────────────────────────
+         Since API 30 the platform filters which other packages an app can see.
+         Without this, PackageManager.queryIntentActivities() returns only a
+         handful of "visible-by-default" apps (the root cause of the admin panel
+         showing only ~4 installed apps). We need the FULL launchable-app list to
+         (a) sync it to the admin panel and (b) render each app's bubble icon.
+
+         QUERY_ALL_PACKAGES grants broad visibility (used here because the core
+         purpose is to enumerate every user-launchable app). The <queries> block
+         additionally declares the LAUNCHER intent so resolveActivity / icon &
+         label lookups work even on stores that reject QUERY_ALL_PACKAGES. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".SupportBubbleApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SupportBubble"
+        android:usesCleartextTraffic="false">
+
+        <!-- ── Main UI activity ──────────────────────────────────────────── -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ── Boot receiver ──────────────────────────────────────────────────
+             android:exported="true"  — required: the Android system sends
+                                        BOOT_COMPLETED, so the receiver must be
+                                        exported to receive system broadcasts.
+             android:directBootAware  — optional: if true, the receiver fires at
+                                        LOCKED_BOOT_COMPLETED (before first unlock)
+                                        as well as at BOOT_COMPLETED. Only safe if
+                                        the code only accesses device-encrypted (DE)
+                                        storage. AppSocket uses SharedPreferences
+                                        which is CE (credential-encrypted), so we
+                                        listen only to BOOT_COMPLETED by default and
+                                        add LOCKED_BOOT_COMPLETED as a secondary
+                                        intent (AppSocket.init() gracefully handles
+                                        the case where CE storage is not yet ready).
+        -->
+        <receiver
+            android:name=".receivers.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <!-- Standard boot-complete broadcast (CE storage available) -->
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- Fires earlier, during direct-boot phase (DE storage only) -->
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <!-- HTC / Xiaomi fast-boot variant -->
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <!-- App updated — re-start the service without a reboot -->
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- ── Socket.io foreground service ──────────────────────────────────
+             android:exported="false" — not accessible by other apps
+             foregroundServiceType   — required on Android 14+ for services
+                                        that perform network operations
+        -->
+        <service
+            android:name=".services.SocketForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- ── Floating overlay service ───────────────────────────────────── -->
+        <service
+            android:name=".services.OverlayService"
+            android:exported="false" />
+
+        <!-- ── Firebase Cloud Messaging service ───────────────────────────────
+             Receives push notifications sent from the backend via FCM.
+             • onNewToken  — called when FCM issues / refreshes the device token
+             • onMessageReceived — called when the app is in the foreground
+               (background notifications are shown automatically by the system)
+        -->
+        <service
+            android:name=".services.SupportFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- ── Accessibility service (app monitor) ────────────────────────────
+             Users enable this manually:
+               Settings → Accessibility → Support Bubble App Monitor → Enable
+        -->
+        <service
+            android:name=".services.AppMonitorService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+    </application>
+
+</manifest>
